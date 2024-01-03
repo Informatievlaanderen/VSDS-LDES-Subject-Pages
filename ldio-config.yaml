@@ -1,0 +1,19 @@
+orchestrator:
+  pipelines:
+    - name: stations-pipeline
+      description: "HTTP polling, OSLO transformation, version creation & HTTP sending."
+      input:
+        name: be.vlaanderen.informatievlaanderen.ldes.ldio.LdioHttpInPoller
+        config:
+          url: https://api.blue-bike.be/pub/location
+          interval: PT2M
+        adapter:
+          name: be.vlaanderen.informatievlaanderen.ldes.ldi.RmlAdapter
+          config:
+            mapping: /ldio/mappings/stations.ttl
+      outputs:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.RepositoryMaterialiser
+          config:
+            sparql-host: http://sparql-host:8080/rdf4j-server
+            repository-id: query
+            named-graph: http://bluebikes

@@ -1,0 +1,59 @@
+version: '3.5'
+
+services:
+  ldi-orchestrator:
+    image: ldes/ldi-orchestrator:1.12.0-SNAPSHOT
+    container_name: ldi-orchestrator
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./mappings:/ldio/mappings:ro
+      - ./ldio-config.yaml:/ldio/application.yaml:ro
+    depends_on:
+      repository-initialiser:
+        condition: service_completed_successfully
+    networks:
+      - subject-pages-network
+
+  sparql-host:
+    image: eclipse/rdf4j-workbench:latest
+    container_name: rdf4j-server
+    environment:
+      - "JAVA_OPTS=-Xms1g -Xmx4g"
+    ports:
+      - "8080:8080"
+    networks:
+      - subject-pages-network
+
+  repository-initialiser:
+    image: ubuntu
+    command: "/bin/sh /initializer/initialize.sh"
+    container_name: rdf4j-server-repo-initializer
+    volumes:
+      - ./initializer:/initializer:ro
+    depends_on:
+      sparql-host:
+        condition: service_started
+    networks:
+      - subject-pages-network
+
+  trifid:
+    image: ghcr.io/zazuko/trifid
+    container_name: trifid
+    ports:
+      - "8888:8080"
+#    volumes:
+#      - ./trifid-sparql.config.yaml:/app/config.yaml
+    env_file:
+      - trifid.env
+    networks:
+      - subject-pages-network
+    depends_on:
+      repository-initialiser:
+        condition: service_completed_successfully
+
+networks:
+  subject-pages-network:
+    driver: bridge
+    name: subject-pages-network
+

@@ -1,0 +1,13 @@
+extends:
+  - ./instances/docker-sparql/config.yaml
+
+middlewares:
+  sparql-proxy:
+    module: "@zazuko/trifid-plugin-sparql-proxy"
+    paths: '/query'
+    config:
+      enableProxy: true
+      fetchOptions:
+        agent: ""
+      sparqlEndpoint:
+        url: http://sparql-host:8080/rdf4j-server
