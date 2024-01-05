@@ -1,0 +1,30 @@
+globals:
+  datasetBaseUrl: https://private-api.gipod.vlaanderen.be/api/v1/
+
+server:
+  listener:
+    port: 8888
+
+middlewares:
+
+  rewrite:
+    module: file:./custom/rewrite.js
+
+  welcome:
+    module: trifid-core/middlewares/view.js
+    paths: /
+    methods: GET
+    config:
+      path: ./custom/entity-renderer.welcome.hbs
+
+  entitiy-renderer:
+    module: "@zazuko/trifid-entity-renderer"
+
+  sparql-handler:
+    module: trifid-handler-sparql
+    config:
+      endpointUrl: http://sparql-host:8080/rdf4j-server/repositories/test
+      resourceExistsQuery: "ASK { <${iri}> ?p ?o . }"
+      resourceGraphQuery: "DESCRIBE <${iri}>"
+      containerExistsQuery: "ASK { ?s a ?o. FILTER REGEX(STR(?s), \"^${iri}\") }"
+      containerGraphQuery: "CONSTRUCT { ?s a ?o. } WHERE { ?s a ?o. FILTER REGEX(STR(?s), \"^${iri}\") }"

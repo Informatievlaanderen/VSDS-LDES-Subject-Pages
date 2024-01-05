@@ -7,8 +7,8 @@ services:
     ports:
       - "8082:8080"
     volumes:
-      - ./mappings:/ldio/mappings:ro
-      - ./ldio-config.yaml:/ldio/application.yaml:ro
+      - ./ldio/mappings:/ldio/mappings:ro
+      - ./ldio/config.yaml:/ldio/application.yaml:ro
     depends_on:
       repository-initialiser:
         condition: service_completed_successfully
@@ -30,7 +30,7 @@ services:
     command: "/bin/sh /initializer/initialize.sh"
     container_name: rdf4j-server-repo-initializer
     volumes:
-      - ./initializer:/initializer:ro
+      - ./repository-initializer:/initializer:ro
     depends_on:
       sparql-host:
         condition: service_started
@@ -38,16 +38,20 @@ services:
       - subject-pages-network
 
   trifid:
-    image: ghcr.io/zazuko/trifid
+    image: vsds/trifid
+    build:
+      context: ./trifid
     container_name: trifid
     ports:
-      - "8888:8080"
-#    volumes:
-#      - ./trifid-sparql.config.yaml:/app/config.yaml
+      - "8888:8888"
+    volumes:
+      - ./trifid/config.yaml:/app/config.yaml:ro
+      - ./trifid/custom:/app/custom:ro
     env_file:
-      - trifid.env
+      - trifid/.env
     networks:
       - subject-pages-network
+    restart: on-failure
     depends_on:
       repository-initialiser:
         condition: service_completed_successfully

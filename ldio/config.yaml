@@ -15,5 +15,17 @@ orchestrator:
         - name: be.vlaanderen.informatievlaanderen.ldes.ldi.RepositoryMaterialiser
           config:
             sparql-host: http://sparql-host:8080/rdf4j-server
-            repository-id: query
-            named-graph: http://bluebikes
+            repository-id: test
+            named-graph: http://blue-bikes.be
+    - name: gipod
+      input:
+        name: be.vlaanderen.informatievlaanderen.ldes.ldi.client.LdioLdesClient
+        config:
+          url: https://private-api.gipod.vlaanderen.be/api/v1/ldes/mobility-hindrances?generatedAtTime=2024-10-05T10:28:37.923Z
+          sourceFormat: application/ld+json
+      outputs:
+        - name: be.vlaanderen.informatievlaanderen.ldes.ldi.RepositoryMaterialiser
+          config:
+            sparql-host: http://sparql-host:8080/rdf4j-server
+            repository-id: test
+            named-graph: http://gipod.be
