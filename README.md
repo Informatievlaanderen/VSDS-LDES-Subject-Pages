@@ -5,23 +5,23 @@
 * [Subject pages](#subject-pages)
   * [Table of contents](#table-of-contents)
   * [What are subject pages?](#what-are-subject-pages)
-  * [Tutorial: how to set up subject pages?](#tutorial-how-to-set-up-subject-pages)
-    * [1. Set up the RDF4J graph db](#1-set-up-the-rdf4j-graph-db)
-      * [Docker compose config for the graph db container](#docker-compose-config-for-the-graph-db-container)
-      * [Initialization of the graph db repository](#initialization-of-the-graph-db-repository)
-      * [Configuration of the LDIO](#configuration-of-the-ldio)
-    * [2. Set up the TRIFID subject pages](#2-set-up-the-trifid-subject-pages)
-      * [Custom Dockerfile](#custom-dockerfile)
-      * [Configuration template](#configuration-template)
-      * [Dataset base url](#dataset-base-url)
-      * [Middlewares](#middlewares)
-        * [a. Rewrite](#a-rewrite)
-        * [b. Entity Renderer](#b-entity-renderer)
-        * [c. Welcome](#c-welcome)
-        * [d. Sparql-handler](#d-sparql-handler)
-        * [Middleware node modules](#middleware-node-modules)
-      * [Server port](#server-port)
-      * [Add Trifid to docker compose](#add-trifid-to-docker-compose)
+* [Tutorial: how to set up subject pages?](#tutorial-how-to-set-up-subject-pages)
+  * [1. Set up the RDF4J graph db](#1-set-up-the-rdf4j-graph-db)
+    * [Docker compose config for the graph db container](#docker-compose-config-for-the-graph-db-container)
+    * [Initialization of the graph db repository](#initialization-of-the-graph-db-repository)
+    * [Configuration of the LDIO](#configuration-of-the-ldio)
+  * [2. Set up the TRIFID subject pages](#2-set-up-the-trifid-subject-pages)
+    * [Custom Dockerfile](#custom-dockerfile)
+    * [Configuration template](#configuration-template)
+    * [Dataset base url](#dataset-base-url)
+    * [Middlewares](#middlewares)
+      * [a. Rewrite](#a-rewrite)
+      * [b. Entity Renderer](#b-entity-renderer)
+      * [c. Welcome](#c-welcome)
+      * [d. Sparql-handler](#d-sparql-handler)
+      * [Middleware node modules](#middleware-node-modules)
+    * [Server port](#server-port)
+    * [Add Trifid to docker compose](#add-trifid-to-docker-compose)
 <!-- TOC -->
 
 ## What are subject pages?
@@ -29,7 +29,7 @@
 Subject pages are web pages that can display the information of an entity's that is part of a linked data event stream (
 LDES).
 
-## Tutorial: how to set up subject pages?
+# Tutorial: how to set up subject pages?
 
 In this tutorial, we will set up subject pages for the LDES
 of [GIPOD](https://www.vlaanderen.be/digitaal-vlaanderen/onze-oplossingen/generiek-informatieplatform-openbaar-domein-gipod).
@@ -37,7 +37,7 @@ To set these pages up, a graph db is required. Any graph db can be used, but in 
 using [RDF4J from Eclips](https://rdf4j.org/). If you already have a graph db, or you want to use another one, you can
 directly go to [step 2](#2-set-up-the-trifid-subject-pages).
 
-### 1. Set up the RDF4J graph db
+## 1. Set up the RDF4J graph db
 
 To set up the graph db, we will be using
 the [LDI Orchestrator (LDIO)](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/ldio/index),
@@ -48,7 +48,7 @@ and
 the [Repository Materialiser](https://informatievlaanderen.github.io/VSDS-Linked-Data-Interactions/ldio/ldio-outputs/ldio-repository-materialiser)
 as output component.
 
-#### Docker compose config for the graph db container
+### Docker compose config for the graph db container
 
 Create a folder where all files for setting up the
 
@@ -79,7 +79,7 @@ networks:
 
 ```
 
-#### Initialization of the graph db repository
+### Initialization of the graph db repository
 
 We want our repository to be initialized when we spin up our containers. Therefor, we use a simple ubuntu container that
 will execute an initialization script.
@@ -136,7 +136,7 @@ Now go back to the `docker-compose.yml` file and add the following service:
       - subject-pages-network
 ```
 
-#### Configuration of the LDIO
+### Configuration of the LDIO
 
 Now the setup for the RDF4J repository is done, we need to provide config for the LDI Orchestrator, so that the
 repository can be filled up with data.
@@ -192,12 +192,12 @@ If all the containers are started, you can go
 to [http://localhost:8080/rdf4j-workbench/repositories/test/summary](http://localhost:8080/rdf4j-workbench/repositories/test/summary),
 and you should see that there a property **Number of Statements** with a certain number next to.
 
-### 2. Set up the TRIFID subject pages
+## 2. Set up the TRIFID subject pages
 
 To set up the subject pages, we will use [Trifid](https://github.com/zazuko/trifid), with image
 tag [ghcr.io/zazuko/trifid:v4.1.1](https://github.com/zazuko/trifid/pkgs/container/trifid/156744021?tag=v4.1.1)
 
-#### Custom Dockerfile
+### Custom Dockerfile
 
 While setting up this tutorial, we experienced some issues with one of the plugins of Trifid together with the RDF4J
 graph db.
@@ -229,7 +229,7 @@ HEALTHCHECK CMD wget -q -O- http://localhost:8080/health
 > If this is the case, the steps to create a local docker image will be deleted, and we will suggest then to use
 > the original Trifid image in the compose file.
 
-#### Configuration template
+### Configuration template
 
 Now add to the same `trifid` folder the file `config.yaml` and add the following template to the file.
 
@@ -247,7 +247,7 @@ middlewares:
   sparql-handler:
 ```
 
-#### Dataset base url
+### Dataset base url
 
 As you can see in the `trifid/config.yaml` file, there is a `globals.datasetBaseUrl` key provided. The database base url
 will be used to replace the trifid host url (which will be `http://localhost:8888/` in our case) when making a query
@@ -259,11 +259,11 @@ The following subject will match with the following call to the subject pages (w
 |:----------------------:|---------------------------------------------------------------------------------------:|
 | **Subject pages call** |                          `http://localhost:8888/mobility-hindrances/15732676/33382013` | 
 
-#### Middlewares
+### Middlewares
 
 There are four middlewares to configure to set up the subject pages. We will configure them one by one.
 
-##### a. Rewrite
+#### a. Rewrite
 
 As described above, the url from the subject pages is rewritten to make a valid request to the graph db. And it is the
 rewrite middleware that is responsible for doing that.
@@ -278,7 +278,7 @@ the `config.yaml` file:
 
 With this config, the default rewrite middleware from Trifid is active.
 
-##### b. Entity Renderer
+#### b. Entity Renderer
 
 The entity renderer is responsible to render an UI for the fetched entity.
 
@@ -294,7 +294,7 @@ Trifid will be used. This can be achieved with the following config under the `m
 Additional configuration or customization to this default renderer can be added, more info about this can be
 found [here](https://github.com/zazuko/trifid/tree/main/packages/entity-renderer)
 
-##### c. Welcome
+#### c. Welcome
 
 You mostly want to set up a welcome page, and this can be done by setting the welcome object under the middlewares in
 the `config.yaml` file to the following:
@@ -317,7 +317,7 @@ the `config.yaml` file to the following:
 - config.path: path to the file that should be used for the rendering of the welcome page, an example can be
   found [here](trifid/welcome.hbs).
 
-##### d. Sparql-handler
+#### d. Sparql-handler
 
 As last, the only thing that is left to configure, is the sparql-handler. This middleware is responsible for which query
 is sent to the graph db and can be configured as follows:
@@ -348,7 +348,7 @@ on [their GitHub repo](https://github.com/zazuko/trifid/blob/main/packages/handl
 > ASK { <${iri}> ?p ?o . }
 > ```
 
-##### Middleware node modules
+#### Middleware node modules
 
 In our case, we always used the default node modules provided by Trifid. But maybe, another node module is desired.
 This can be achieved via two ways:
@@ -374,7 +374,7 @@ ENTRYPOINT ["tini", "--", "/app/server.js"]
 HEALTHCHECK CMD wget -q -O- http://localhost:8080/health
 ```
 
-#### Server port
+### Server port
 By default, the Trifid server run listens internally on port 8080. If for some reason another port is desired, add to following to the `trifid/config.yaml` file:
 ```yaml
 server:
@@ -383,7 +383,7 @@ server:
 ```
 If the port has changed, don't forget to update the `docker-compose.yml` with the modified port!
 
-#### Add Trifid to docker compose
+### Add Trifid to docker compose
 To wrap up the Trifid configuration, add the following service to `docker-compose`
 ```yaml
   trifid:
