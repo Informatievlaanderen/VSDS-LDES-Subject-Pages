@@ -7,15 +7,14 @@ services:
     ports:
       - "8082:8080"
     volumes:
-      - ./ldio/mappings:/ldio/mappings:ro
-      - ./ldio/config.yaml:/ldio/application.yaml:ro
+      - ./ldio.config.yaml:/ldio/application.yaml:ro
     depends_on:
-      repository-initialiser:
+      repository-initializer:
         condition: service_completed_successfully
     networks:
       - subject-pages-network
 
-  sparql-host:
+  graph-db:
     image: eclipse/rdf4j-workbench:latest
     container_name: rdf4j-server
     environment:
@@ -25,14 +24,14 @@ services:
     networks:
       - subject-pages-network
 
-  repository-initialiser:
+  repository-initializer:
     image: ubuntu
     command: "/bin/sh /initializer/initialize.sh"
     container_name: rdf4j-server-repo-initializer
     volumes:
       - ./repository-initializer:/initializer:ro
     depends_on:
-      sparql-host:
+      graph-db:
         condition: service_started
     networks:
       - subject-pages-network
@@ -43,17 +42,16 @@ services:
       context: ./trifid
     container_name: trifid
     ports:
-      - "8888:8888"
+      - "8888:8080"
     volumes:
       - ./trifid/config.yaml:/app/config.yaml:ro
-      - ./trifid/custom:/app/custom:ro
-    env_file:
-      - trifid/.env
+      - ./trifid/welcome.hbs:/app/welcome.hbs:ro
+    environment:
+      - TRIFID_CONFIG=./config.yaml
     networks:
       - subject-pages-network
-    restart: on-failure
     depends_on:
-      repository-initialiser:
+      repository-initializer:
         condition: service_completed_successfully
 
 networks:
