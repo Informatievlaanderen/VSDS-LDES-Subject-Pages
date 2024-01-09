@@ -1,6 +1,8 @@
 # Subject pages
 
 ## Table of contents
+
+[//]: # (@formatter:off)
 <!-- TOC -->
 * [Subject pages](#subject-pages)
   * [Table of contents](#table-of-contents)
@@ -9,7 +11,7 @@
   * [1. Set up the RDF4J graph db](#1-set-up-the-rdf4j-graph-db)
     * [Docker compose config for the graph db container](#docker-compose-config-for-the-graph-db-container)
     * [Initialization of the graph db repository](#initialization-of-the-graph-db-repository)
-    * [Configuration of the LDIO](#configuration-of-the-ldio)
+    * [Configuration of the LDI Orchestrator](#configuration-of-the-ldi-orchestrator)
   * [2. Set up the TRIFID subject pages](#2-set-up-the-trifid-subject-pages)
     * [Custom Dockerfile](#custom-dockerfile)
     * [Configuration template](#configuration-template)
@@ -23,6 +25,8 @@
     * [Server port](#server-port)
     * [Add Trifid to docker compose](#add-trifid-to-docker-compose)
 <!-- TOC -->
+
+[//]: # (@formatter:on)
 
 ## What are subject pages?
 
@@ -54,6 +58,7 @@ Create a folder where all files for setting up the
 
 ```shell
 mkdir subject-pages
+cd subject-pages
 ```
 
 Add a `docker-compose.yml` file to this directory and add the following config to that file
@@ -88,7 +93,7 @@ will execute an initialization script.
 mkdir repository-intializer
 ```
 
-Add a file to this folder named `test.config.ttl` with the following content:
+Add a file to this folder named `repo-definition.ttl` with the following content:
 
 ```text
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
@@ -109,16 +114,15 @@ Add a script file with the name `initialize.sh` to the same folder and add follo
 
 ```shell
 apt-get update && apt-get install curl -y && apt-get clean
-curl -X PUT http://graph-db:8080/rdf4j-server/repositories/test -H "Content-Type: text/turtle" -d "@/initializer/test.config.ttl"
+curl -X PUT http://graph-db:8080/rdf4j-server/repositories/test -H "Content-Type: text/turtle" -d "@/initializer/repo-definition.ttl"
 ```
 
 The above script and turtle file will add a repository to the graph db with the name `test`, if another id is desired,
 you will have to change two things.
 
-First of all, change in the curl command to this
-`http://graph-db:8080/rdf4j-server/repositories/[NAME_OF_YOUR_REPO]`
-
-Secondly, change in the turtle file line 5 to this: `config:rep.id "[NAME_OF_YOUR_REPO]"`
+1. Change in the curl command to this
+   `http://graph-db:8080/rdf4j-server/repositories/[NAME_OF_YOUR_REPO]`
+2. change in the turtle file line 5 to this: `config:rep.id "[NAME_OF_YOUR_REPO]"`
 
 Now go back to the `docker-compose.yml` file and add the following service:
 
@@ -136,10 +140,11 @@ Now go back to the `docker-compose.yml` file and add the following service:
       - subject-pages-network
 ```
 
-### Configuration of the LDIO
+### Configuration of the LDI Orchestrator
 
-Now the setup for the RDF4J repository is done, we need to provide config for the LDI Orchestrator, so that the
+Now that the setup for the RDF4J repository is done, we need to provide config for the LDI Orchestrator, so that the
 repository can be filled up with data.
+
 In the directory `subject-pages`, we make a file `ldio.config.yaml` with the following config:
 
 ```yaml
@@ -159,12 +164,12 @@ orchestrator:
             named-graph: http://gipod
  ```
 
-With this config, we have added one pipeline to the orchestrator with two components, an input component, the
-LdesClient,
-which usually follows an LDES. As second, one output component is provided, namely the Repository Materialiser,
-which will send the output to a provided sparql host and repository. In this case, there is also a named graph provided.
+With this config, one pipeline is added to the orchestrator containing two components, first the LdioLdesClient as an
+input component, which will follow an LDES. To finish the pipeline, a single output component is provided, namely the
+Repository Materialiser, which will send the output to a repository in the provided sparql host, optionally with a
+context provided by the named-graph property.
 
-If this is set up, we can add the ldio as a service to the `docker-compose`. Add the following to
+If this is set up, ldio can be added as a service to `docker compose`, by adding the following config to
 the `docker-compose.yml` file:
 
 ```yaml
@@ -182,34 +187,37 @@ the `docker-compose.yml` file:
       - subject-pages-network
 ```
 
-Now, you can already test this. First, we will spin up our services by executing the following:
+This can already be tested, starting by spinning up our services by executing the following command:
 
 ```shell
 docker compose up 
 ```
 
-If all the containers are started, you can go
+Secondly, if all the containers are started, you can go
 to [http://localhost:8080/rdf4j-workbench/repositories/test/summary](http://localhost:8080/rdf4j-workbench/repositories/test/summary),
-and you should see that there a property **Number of Statements** with a certain number next to.
+and you should see a property **Number of Statements** with a certain number next to, which should increase
+with each refresh (F5)
 
 ## 2. Set up the TRIFID subject pages
 
-To set up the subject pages, we will use [Trifid](https://github.com/zazuko/trifid), with image
+To set up the subject pages, [Trifid](https://github.com/zazuko/trifid) will be used, currently with image
 tag [ghcr.io/zazuko/trifid:v4.1.1](https://github.com/zazuko/trifid/pkgs/container/trifid/156744021?tag=v4.1.1)
 
 ### Custom Dockerfile
 
-While setting up this tutorial, we experienced some issues with one of the plugins of Trifid together with the RDF4J
-graph db.
-This plugin has been fixed and released, but this plugin is not plugged in the Trifid core package.
+While setting up this tutorial, some issues were encountered with one of the plugins of Trifid in combination with the
+RDF4J graph db. This plugin has been fixed and released, but is not plugged in the Trifid core package in the docker
+image.
 
-To solve this issue, we suggest to create a local Dockerfile.
+To solve this issue, we suggest to create a local Dockerfile by following the next steps.
+
+1. Create a new directory:
 
 ```shell
 mkdir trifid
 ```
 
-Add a `Dockerfile` to this folder with the following:
+2. Add a `Dockerfile` to this folder with the following content:
 
 ```dockerfile
 FROM ghcr.io/zazuko/trifid:v4.1.1
@@ -223,6 +231,14 @@ ENTRYPOINT ["tini", "--", "/app/server.js"]
 
 # use the same health check as the base image
 HEALTHCHECK CMD wget -q -O- http://localhost:8080/health 
+```
+
+3. Build the image \
+   This can be manually done, but in this tutorial, it will be done by `docker compose`. If you choose to do it
+   manually, execute the following command:
+
+```shell
+docker build --tag vsds/trifid ./trifid
 ```
 
 > **Note**: we expect that this issue will be resolved in the next release of the trifid image.
@@ -239,21 +255,38 @@ globals:
 
 middlewares:
   rewrite:
+    module: trifid-core/middlewares/rewrite.js
 
   welcome:
+    module: trifid-core/middlewares/view.js
+    paths:
+      - /
+      - /index
+    methods: GET
+    config:
+      path: file:./welcome.hbs
 
   entitiy-renderer:
+    module: "@zazuko/trifid-entity-renderer"
 
   sparql-handler:
+    module: trifid-handler-sparql
+    config:
+      endpointUrl: http://graph-db:8080/rdf4j-server/repositories/test
+      resourceExistsQuery: "ASK { <${iri}> ?p ?o . }"
+      resourceGraphQuery: "DESCRIBE <${iri}>"
+      containerExistsQuery: "ASK { ?s a ?o. FILTER REGEX(STR(?s), \"^${iri}\") }"
+      containerGraphQuery: "CONSTRUCT { ?s a ?o. } WHERE { ?s a ?o. FILTER REGEX(STR(?s), \"^${iri}\") }"
 ```
+
+In the next steps of this tutorial, we will explain this config.
 
 ### Dataset base url
 
-As you can see in the `trifid/config.yaml` file, there is a `globals.datasetBaseUrl` key provided. The database base url
-will be used to replace the trifid host url (which will be `http://localhost:8888/` in our case) when making a query
-requests to the graph db.
+The dataset base url is the base url of the subjects in the graph db and will be used to replace the trifid host url
+,which will be `http://localhost:8888/` in this case, when making a query requests to the graph db.
 
-The following subject will match with the following call to the subject pages (with host `http://localhost:8888/`):
+The following subject will match with the following call to the subject pages (with the same host as declared):
 
 |  **Graph db subject**  | `https://private-api.gipod.vlaanderen.be/api/v1/mobility-hindrances/15732676/33382013` |
 |:----------------------:|---------------------------------------------------------------------------------------:|
@@ -261,43 +294,39 @@ The following subject will match with the following call to the subject pages (w
 
 ### Middlewares
 
-There are four middlewares to configure to set up the subject pages. We will configure them one by one.
+There are four middlewares that needs to be set up for the subject pages. Each of them requires a node module, more info
+about the node modules can be found below all the middlewares.
 
 #### a. Rewrite
 
-As described above, the url from the subject pages is rewritten to make a valid request to the graph db. And it is the
-rewrite middleware that is responsible for doing that.
+As described above, the url from the subject pages is rewritten to make a valid request to the graph db. And the rewrite
+middleware is responsible for that.
 
-This can easily be enabled by setting a node module in the following config to the middlewares object in
-the `config.yaml` file:
+In this case, the default rewrite node module from Trifid itself is used.
 
 ```yaml
   rewrite:
     module: trifid-core/middlewares/rewrite.js
 ```
 
-With this config, the default rewrite middleware from Trifid is active.
-
 #### b. Entity Renderer
 
-The entity renderer is responsible to render an UI for the fetched entity.
+The entity renderer is responsible to render a web page for the fetched entity.
 
-An entity renderer can be set by configuring which node module must be used. In this case,
-we will use the [default entity renderer](https://github.com/zazuko/trifid/tree/main/packages/entity-renderer) from
-Trifid will be used. This can be achieved with the following config under the `middlewares` key:
+In this case, the [default entity renderer](https://github.com/zazuko/trifid/tree/main/packages/entity-renderer) from
+Trifid is used as well.
 
 ```yaml
   entitiy-renderer:
     module: "@zazuko/trifid-entity-renderer"
 ```
 
-Additional configuration or customization to this default renderer can be added, more info about this can be
-found [here](https://github.com/zazuko/trifid/tree/main/packages/entity-renderer)
+Additional configuration or customization to this default renderer can be added. More info about this can be
+found [here](https://github.com/zazuko/trifid/tree/main/packages/entity-renderer).
 
 #### c. Welcome
 
-You mostly want to set up a welcome page, and this can be done by setting the welcome object under the middlewares in
-the `config.yaml` file to the following:
+In most cases, a welcome or landing page is desired. To can be achieved by configuring the welcome middleware.
 
 ```yaml
   welcome:
@@ -310,17 +339,18 @@ the `config.yaml` file to the following:
       path: file:./welcome.hbs
 ```
 
-- module: just like the previous middleware, we take the default node module to activate this middleware, but this can
-  also be customized.
-- paths: on which paths the welcome page should be rendered, in this `/` and `/index`.
-- methods: with which http methods can the welcome page be reached, in this case with a `GET` method
-- config.path: path to the file that should be used for the rendering of the welcome page, an example can be
-  found [here](trifid/welcome.hbs).
+Explanation about the configuration keys:
+
+- module: just like the previous middlewares, the default node module will be used.
+- paths: on which paths the welcome page can be reached, which will be `/` and `/index` in this case.
+- methods: via which http methods can the welcome page be reached, in this case with a `GET` method
+- config.path: file path that should be used for the rendering, an example can be found [here](trifid/welcome.hbs).
 
 #### d. Sparql-handler
 
-As last, the only thing that is left to configure, is the sparql-handler. This middleware is responsible for which query
-is sent to the graph db and can be configured as follows:
+At last, the sparql-handler middleware is left. This middleware is responsible for which query is sent to the graph db.
+
+This configuration is used in this tutorial:
 
 ```yaml
   sparql-handler:
@@ -329,36 +359,43 @@ is sent to the graph db and can be configured as follows:
       endpointUrl: http://graph-db:8080/rdf4j-server/repositories/test
       resourceExistsQuery: "ASK { <${iri}> ?p ?o . }"
       resourceGraphQuery: "DESCRIBE <${iri}>"
-      containerExistsQuery: "ASK { ?s a ?o. FILTER REGEX(STR(?s), \"^${iri}\") }"
-      containerGraphQuery: "CONSTRUCT { ?s a ?o. } WHERE { ?s a ?o. FILTER REGEX(STR(?s), \"^${iri}\") }"
 ```
 
-In this case, the [default](https://github.com/zazuko/trifid/blob/main/packages/handler-sparql/README.md) module from
-Trifid is used. More information about how to configure this, can be found
+Explanation about the configuration keys:
+
+- module: the [default](https://github.com/zazuko/trifid/blob/main/packages/handler-sparql/README.md) is used again
+- config:
+    - endpointUrl: endpoint on which the graph db can be reached
+    - resourceExistsQuery: query that must return a boolean to check whether the resource exists, usually an `ASK` query
+    - resourceGraphQuery: query that fetches all information about the resource, usually a `DESCRIBE` query
+
+There are even a lot more of options on how to configure this middleware, more information about this can be found
 on [their GitHub repo](https://github.com/zazuko/trifid/blob/main/packages/handler-sparql/README.md#examples).
 
-> **NOTE**: Most of the graph dbs can handle the following sparql query:
+> **NOTE**: Most of the graph dbs can handle the following `ASK` sparql query:
 > ```
 > ASK { <${iri}> ?p ?o }
 > ``` 
-> However, RDF4J
-> requires an additional dot before the closing curly bracket in this sparql query, which results in the following
-> query:
+> However, RDF4J requires an additional dot before the closing curly bracket in this sparql query, which results in the
+> following query:
 > ```
 > ASK { <${iri}> ?p ?o . }
 > ```
 
 #### Middleware node modules
 
-In our case, we always used the default node modules provided by Trifid. But maybe, another node module is desired.
-This can be achieved via two ways:
+In our case, the default node modules provided by Trifid are always used. However, other node modules can be desired
+sometimes.
+
+This can be set up per node module via following ways:
 
 1. A module or file is mounted to the container and the right file path is set to the module property. \
    e.g.: a custom `rewrite.js` is mounted in the container with the following path: `/app/custom/rewrite.js`, then must
    the following config be provided in the `config.yaml` file: `middlewares.rewrite.module: ./custom/rewrite.js`
 2. A npm package is installed \
    A custom docker image is required, but can easily be achieved by creating a custom `Dockerfile`. Don't forget to
-   update your `docker-compose.yml` file to use the custom build and image! A custom docker file would look like this:
+   locally build this image or update your `docker-compose.yml` file to use the custom build and image! A custom docker
+   file would look like this:
 
 ```dockerfile
 FROM ghcr.io/zazuko/trifid:v4.1.1
@@ -375,16 +412,22 @@ HEALTHCHECK CMD wget -q -O- http://localhost:8080/health
 ```
 
 ### Server port
-By default, the Trifid server run listens internally on port 8080. If for some reason another port is desired, add to following to the `trifid/config.yaml` file:
+
+By default, the Trifid server run listens internally on port 8080. If for some reason another port is desired, add to
+following to the `trifid/config.yaml` file:
+
 ```yaml
 server:
   listener:
     port: 8888
 ```
+
 If the port has changed, don't forget to update the `docker-compose.yml` with the modified port!
 
 ### Add Trifid to docker compose
-To wrap up the Trifid configuration, add the following service to `docker-compose`
+
+To wrap up the Trifid configuration, add the following service to `docker compose`
+
 ```yaml
   trifid:
     image: vsds/trifid
@@ -406,6 +449,19 @@ To wrap up the Trifid configuration, add the following service to `docker-compos
 ```
 
 The only thing left to do, is spin everything up:
+
 ```shell
 docker compose up
 ```
+
+If for some reason, you only want to restart the Trifid service, e.g. when you were testing the graph db and LDI
+Orchestrator, and so the repository-initializer service should not start up again, run the following command:
+
+```shell
+docker compose up --no-deps trifid
+```
+
+Now you can go to [http://localhost:8888](http://localhost:8888) to visit the subject pages.
+
+
+**Thanks for following this tutorial and good luck with your subject pages!**
