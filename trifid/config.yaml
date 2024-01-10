@@ -1,0 +1,25 @@
+globals:
+  datasetBaseUrl: https://private-api.gipod.vlaanderen.be/api/v1/
+
+middlewares:
+  rewrite:
+    module: trifid-core/middlewares/rewrite.js
+
+  welcome:
+    module: trifid-core/middlewares/view.js
+    paths:
+      - /
+      - /index
+    methods: GET
+    config:
+      path: file:./welcome.hbs
+
+  entitiy-renderer:
+    module: "@zazuko/trifid-entity-renderer"
+
+  sparql-handler:
+    module: trifid-handler-sparql
+    config:
+      endpointUrl: http://graph-db:8080/rdf4j-server/repositories/test
+      resourceExistsQuery: "ASK { <${iri}> ?p ?o . }"
+      resourceGraphQuery: "DESCRIBE <${iri}>"
